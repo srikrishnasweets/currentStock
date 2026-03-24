@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Current Stock</title>
+    <!-- Modern Typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Primary & Neutrals */
+            --primary: #4f46e5;
+            --primary-light: #6366f1;
+            --primary-dark: #4338ca;
+
+            /* Backgrounds */
+            --bg-body: #f8fafc;
+            --bg-body-alt: #f1f5f9;
+            --bg-card: #ffffff;
+            --bg-hover: #f9fafb;
+
+            /* Text */
+            --text-main: #0f172a;
+            --text-secondary: #475569;
+            --text-muted: #64748b;
+            --text-light: #94a3b8;
+
+            /* Borders & Shadows */
+            --border: #e2e8f0;
+            --border-light: #f1f5f9;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+
+            /* Status Colors */
+            --color-rm: #6366f1;
+            --color-pm: #10b981;
+            --color-cons: #0ea5e9;
+            --color-sets: #f59e0b;
+            --color-oos: #ef4444;
+            --color-ls: #f97316;
+            --color-es: #3b82f6;
+            --color-cs: #10b981;
+
+            /* Transitions */
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            line-height: 1.6;
+            padding-bottom: 2rem;
+            font-size: 14px;
+            overflow: hidden;
+        }
+
+        /* ===== HEADER ===== */
+        header {
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+            padding: 0.8rem 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+            box-shadow: var(--shadow-sm);
+            transition: var(--transition);
+        }
+
+        header h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-main);
+            letter-spacing: -0.5px;
+        }
+
+        .timestamp {
+            font-size: 0.8125rem;
+            color: var(--text-muted);
+            font-weight: 500;
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: var(--transition);
+        }
+
+
+
+        /* ===== CONTAINER & LAYOUT ===== */
+        .container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.5rem;
+            padding: 0 1rem;
+        }
+
+        /* ===== CARD/COLUMN STYLES ===== */
+        .column {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .column.status-oos {
+            background: linear-gradient(180deg, #fff5f5 0%, #ffffff 48%);
+        }
+
+        .column.status-ls {
+            background: linear-gradient(180deg, #fff7ed 0%, #ffffff 48%);
+        }
+
+        .column.status-es {
+            background: linear-gradient(180deg, #eff6ff 0%, #ffffff 48%);
+        }
+
+        .column.status-cs {
+            background: linear-gradient(180deg, #f0fdf4 0%, #ffffff 48%);
+        }
+
+        .column.status-transition {
+            animation: columnFlip 0.55s ease;
+        }
+
+        .column::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary) 0%, transparent 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+
+
+        .column h2 {
+            font-size: 1.0625rem;
+            font-weight: 700;
+            color: var(--text-main);
+            padding-bottom: 0.75rem;
+            letter-spacing: -0.3px;
+        }
+
+        /* ===== PILLS/BADGES ===== */
+        .pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .pill {
+            padding: 0.35rem 0.7rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: white;
+            letter-spacing: 0.3px;
+            box-shadow: 0 2px 4px rgb(0 0 0 / 0.1);
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .pill.active-status {
+            transform: translateY(-1px) scale(1.06);
+            box-shadow: 0 0 0 2px rgb(15 23 42 / 0.18), 0 8px 16px rgb(15 23 42 / 0.2);
+        }
+
+
+
+        .category {
+            background: linear-gradient(135deg, #3b82f6 0%, #0073ff 100%);
+        }
+
+        .oos {
+            background: linear-gradient(135deg, #ef4444 0%, #f87171 100%);
+        }
+
+        .ls {
+            background: linear-gradient(135deg, #f97316 0%, #fb923c 100%);
+        }
+
+        .es {
+            background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+        }
+
+        .cs {
+            background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+        }
+
+        /* ===== TABLE STYLES ===== */
+        .table-responsive {
+            flex-grow: 1;
+            overflow: hidden;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+        }
+
+        th {
+            text-align: left;
+            padding: 0.75rem 0.5rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+            font-size: 0.8125rem;
+            letter-spacing: 0.3px;
+            border-bottom: 2px solid var(--border);
+            background: var(--bg-hover);
+            text-transform: uppercase;
+            transition: var(--transition);
+        }
+
+        td {
+            padding: 0.75rem 0.5rem;
+            border-bottom: 1px solid var(--border-light);
+            transition: background-color 0.2s ease;
+        }
+
+        tbody tr {
+            transition: background-color 0.2s ease;
+        }
+
+        tbody.status-transition {
+            animation: rowsIn 0.45s ease;
+        }
+
+
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        .stock-value {
+            font-weight: 600;
+            color: var(--primary);
+            background: linear-gradient(135deg, #eef2ff 0%, #f3e8ff 100%);
+            padding: 0.2rem 0.5rem;
+            border-radius: 5px;
+            display: inline-block;
+            border: 1px solid #e0e7ff;
+            transition: var(--transition);
+        }
+
+        @keyframes columnFlip {
+            0% { opacity: 0.55; transform: translateY(6px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes rowsIn {
+            0% { opacity: 0; transform: translateY(10px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+
+
+        /* ===== RESPONSIVE DESIGN ===== */
+        @media (max-width: 1400px) {
+            .container {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 1.25rem;
+            }
+        }
+
+        @media (max-width: 1024px) {
+            .container {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1.25rem;
+            }
+
+            header {
+                padding: 1rem 1.5rem;
+            }
+
+            header h1 {
+                font-size: 1.25rem;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .container {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+                width: 100%;
+                padding: 0 0.75rem;
+            }
+
+            header {
+                flex-direction: column;
+                gap: 0.75rem;
+                text-align: center;
+                padding: 1rem 1.25rem;
+            }
+
+            header h1 {
+                font-size: 1.1rem;
+            }
+
+            .column {
+                padding: 1.25rem;
+            }
+
+            .column h2 {
+                font-size: 0.95rem;
+            }
+
+            .pills {
+                gap: 0.4rem;
+                margin-bottom: 1rem;
+            }
+
+            .pill {
+                padding: 0.3rem 0.6rem;
+                font-size: 0.7rem;
+            }
+
+            table {
+                font-size: 0.8125rem;
+            }
+
+            th,
+            td {
+                padding: 0.5rem 0.4rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1>Current Stock</h1>
+        <div class="timestamp" id="last-update">Latest Update : Loading...</div>
+    </header>
+
+    <div class="container" id="container">
+        <!-- Dynamically populated by JavaScript -->
+    </div>
+
+    <script>
+        const API_URL = 'https://script.google.com/macros/s/AKfycbxKslvoVMPPOzSlie_Q9JI1ULI_PNtJSzFShl4ypq1yJuEYEV-u0AgJqxn0gDmhI-X3/exec';
+
+        // Category mapping
+        const categoryMap = {
+            'RAW MATERIALS': { label: 'RAW MATERIALS', pill:'RM'},
+            'PACKING MATERIALS': { label: 'PACKING MATERIALS', pill:'PM'},
+            'CONSUMABLES': { label: 'CONSUMABLES', pill:'CONS'},
+            'RM SETS': { label: 'SETS', pill:'SETS'}
+        };
+
+        const PAGE_SIZE = 15;
+        const ROTATE_MS = 10000;
+        const STATUS_ORDER = ['oos', 'ls', 'es', 'cs'];
+        let rotationTimer = null;
+        let organizedCache = null;
+        let categoryViewState = {};
+
+        // Status mapping
+        const statusMap = {
+            'oos': { label: 'OOS', class: 'oos' },
+            'ls': { label: 'LS', class: 'ls' },
+            'es': { label: 'ES', class: 'es' },
+            'cs': { label: 'CS', class: 'cs' }
+        };
+
+        // Determine stock status based on current balance and min/max
+        function getStockStatus(closingBalance, minStock, maxStock) {
+            if (closingBalance === 0) return 'oos';
+            if (closingBalance < minStock) return 'ls';
+            if (closingBalance > maxStock) return 'es';
+            return 'cs';
+        }
+
+        // Fetch data from API
+        async function fetchInventoryData() {
+            try {
+                const response = await fetch(API_URL);
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                return [];
+            }
+        }
+
+        // Organize data by category
+        function organizeByCategory(products) {
+            const organized = {};
+
+            // Initialize categories
+            Object.keys(categoryMap).forEach(cat => {
+                organized[cat] = {};
+            });
+
+            // Organize products
+            products.forEach(product => {
+                const category = product.Category || 'Unknown';
+                const status = getStockStatus(
+                    product['Closing Balance'],
+                    product['Min Stock'],
+                    product['Max Stock']
+                );
+
+                if (!organized[category]) {
+                    organized[category] = {};
+                }
+                if (!organized[category][status]) {
+                    organized[category][status] = [];
+                }
+
+                organized[category][status].push(product);
+            });
+
+            return organized;
+        }
+
+        // Generate status pills with counts
+        function generatePills(categoryData, categoryKey, activeStatus) {
+            const statusCounts = {
+                'oos': 0, 'ls': 0, 'es': 0, 'cs': 0
+            };
+
+            Object.keys(categoryData).forEach(status => {
+                if (statusCounts.hasOwnProperty(status)) {
+                    statusCounts[status] = categoryData[status].length;
+                }
+            });
+
+            const categoryLabel = categoryMap[categoryKey].pill;
+            const totalCount = Object.values(statusCounts).reduce((a, b) => a + b, 0);
+
+            let html = `<span class="pill category">${categoryLabel}: ${totalCount}</span>`;  // ✅ Use 'category' class
+            html += `<span class="pill oos ${activeStatus === 'oos' ? 'active-status' : ''}">OOS: ${statusCounts.oos}</span>`;
+            html += `<span class="pill ls ${activeStatus === 'ls' ? 'active-status' : ''}">LS: ${statusCounts.ls}</span>`;
+            html += `<span class="pill es ${activeStatus === 'es' ? 'active-status' : ''}">ES: ${statusCounts.es}</span>`;
+            html += `<span class="pill cs ${activeStatus === 'cs' ? 'active-status' : ''}">CS: ${statusCounts.cs}</span>`;
+
+            return html;
+        }
+
+        function getCategoryStatusSequence(categoryData) {
+            return STATUS_ORDER.filter(status => categoryData[status] && categoryData[status].length > 0);
+        }
+
+        function getCategoryView(categoryKey, categoryData) {
+            const sequence = getCategoryStatusSequence(categoryData);
+            if (!sequence.length) {
+                return { activeStatus: 'oos', products: [], page: 0, totalPages: 1 };
+            }
+
+            if (!categoryViewState[categoryKey]) {
+                categoryViewState[categoryKey] = { statusCursor: 0, pageByStatus: {} };
+            }
+
+            const state = categoryViewState[categoryKey];
+            state.statusCursor = state.statusCursor % sequence.length;
+            const activeStatus = sequence[state.statusCursor];
+            const statusProducts = categoryData[activeStatus] || [];
+            const totalPages = Math.max(1, Math.ceil(statusProducts.length / PAGE_SIZE));
+            const currentPage = Math.min(state.pageByStatus[activeStatus] || 0, totalPages - 1);
+
+            state.pageByStatus[activeStatus] = currentPage;
+            const startIndex = currentPage * PAGE_SIZE;
+            const products = statusProducts.slice(startIndex, startIndex + PAGE_SIZE);
+
+            return { activeStatus, products, page: currentPage, totalPages };
+        }
+
+        function advanceCategoryView(categoryKey, categoryData) {
+            const sequence = getCategoryStatusSequence(categoryData);
+            if (!sequence.length) return;
+
+            if (!categoryViewState[categoryKey]) {
+                categoryViewState[categoryKey] = { statusCursor: 0, pageByStatus: {} };
+            }
+
+            const state = categoryViewState[categoryKey];
+            state.statusCursor = state.statusCursor % sequence.length;
+            const activeStatus = sequence[state.statusCursor];
+            const statusProducts = categoryData[activeStatus] || [];
+            const totalPages = Math.max(1, Math.ceil(statusProducts.length / PAGE_SIZE));
+            const page = state.pageByStatus[activeStatus] || 0;
+
+            if (page + 1 < totalPages) {
+                state.pageByStatus[activeStatus] = page + 1;
+                return;
+            }
+
+            state.pageByStatus[activeStatus] = 0;
+            state.statusCursor = (state.statusCursor + 1) % sequence.length;
+        }
+
+        // Generate table rows with products
+        function generateTableRows(visibleProducts) {
+            let html = '';
+
+            visibleProducts.forEach(product => {
+                const name = String(product.Product || '');
+                const truncatedName = name.length > 30 ? name.substring(0, 27) + '...' : name;
+                html += `
+                        <tr title="${name}">
+                            <td>${truncatedName}</td>
+                            <td><span class="stock-value">${product['Closing Balance']}</span></td>
+                        </tr>
+                    `;
+            });
+
+            return html || '<tr><td colspan="2" style="text-align: center; color: var(--text-muted);">No products</td></tr>';
+        }
+
+        // Generate column HTML
+        function generateColumn(categoryKey, categoryData) {
+            const categoryInfo = categoryMap[categoryKey];
+            if (!categoryInfo) return '';
+
+            const view = getCategoryView(categoryKey, categoryData);
+            const pillsHtml = generatePills(categoryData, categoryKey, view.activeStatus);
+            const tableRowsHtml = generateTableRows(view.products);
+            const statusLabel = statusMap[view.activeStatus].label;
+            const pageLabel = `${view.page + 1}/${view.totalPages}`;
+
+            return `
+            <div class="column status-${view.activeStatus} status-transition">
+                <h2>${categoryInfo.label} | ${statusLabel} (${pageLabel})</h2>
+                <div class="pills">
+                    ${pillsHtml}
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr><th>Product</th><th>Stock</th></tr>
+                        </thead>
+                        <tbody class="status-transition">
+                            ${tableRowsHtml}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+        }
+
+        // Render dashboard
+        function renderDashboard(organized) {
+            const container = document.getElementById('container');
+            let html = '';
+
+            const order = ['RAW MATERIALS', 'PACKING MATERIALS', 'CONSUMABLES', 'RM SETS'];
+
+            for (const categoryKey of order) {
+                if (organized[categoryKey]) {
+                    html += generateColumn(categoryKey, organized[categoryKey]);
+                }
+            }
+
+            container.innerHTML = html;
+            updateTimestamp();
+        }
+
+        function startRotation() {
+            if (rotationTimer) {
+                clearInterval(rotationTimer);
+            }
+            rotationTimer = setInterval(() => {
+                if (organizedCache) {
+                    Object.keys(organizedCache).forEach(categoryKey => {
+                        advanceCategoryView(categoryKey, organizedCache[categoryKey]);
+                    });
+                    renderDashboard(organizedCache);
+                }
+            }, ROTATE_MS);
+        }
+
+        // Update timestamp
+        function updateTimestamp() {
+            const now = new Date();
+            const options = {
+                day: '2-digit', month: 'short', year: 'numeric',
+                hour: '2-digit', minute: '2-digit', second: '2-digit',
+                hour12: true
+            };
+            document.getElementById('last-update').innerText = `Latest Update : ${now.toLocaleString('en-GB', options).replace(',', ' |')}`;
+        }
+
+        // Initialize dashboard
+        async function initDashboard() {
+            const products = await fetchInventoryData();
+            const organized = organizeByCategory(products);
+            organizedCache = organized;
+            categoryViewState = {};
+            renderDashboard(organized);
+            startRotation();
+        }
+
+        // Load on page load
+        document.addEventListener('DOMContentLoaded', initDashboard);
+    </script>
+
+</body>
+
+</html>
+
